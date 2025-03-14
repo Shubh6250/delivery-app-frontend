@@ -35,6 +35,8 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { useUser } from "@/hooks/useUser"
+import { getInitials } from "@/utils/utils"
 
 export default function UserProfile() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -45,7 +47,7 @@ export default function UserProfile() {
   const [phone, setPhone] = useState("+1 (555) 123-4567")
   const router = useRouter()
   const { toast } = useToast()
-
+ const { user ,setUser} = useUser();
   useEffect(() => {
     // Simulate loading data
     const timer = setTimeout(() => {
@@ -62,6 +64,13 @@ export default function UserProfile() {
       description: "Your profile information has been updated successfully",
     })
   }
+  useEffect(() => {
+    if (user) {
+      setName(user.data.name || "");
+      setEmail(user.data.email || "");
+      setPhone(user.data.phone || "");
+    }
+  }, [user]); 
 
   const addresses = [
     {
@@ -111,6 +120,18 @@ export default function UserProfile() {
       </div>
     )
   }
+  console.log(user,"user");
+const initials = getInitials(user?.data?.name || "")
+
+const handleLogout = () => {
+  localStorage.removeItem("authToken"); // Remove token
+  setUser(null)
+  toast({
+    title: "Logged out",
+    description: "You have been logged out successfully.",
+  });
+  router.push("/auth/login"); // Redirect to login page
+};
 
   return (
     <PageTransition>
@@ -171,7 +192,7 @@ export default function UserProfile() {
                   <Button variant="ghost" size="icon" className="text-honolulu-blue">
                     <Avatar className="h-8 w-8 border border-honolulu-blue">
                       <AvatarImage src="/placeholder-user.jpg" alt="User" />
-                      <AvatarFallback className="bg-honolulu-blue text-white">JD</AvatarFallback>
+                      <AvatarFallback className="bg-honolulu-blue text-white">{initials}</AvatarFallback>
                     </Avatar>
                     <span className="sr-only">Profile</span>
                   </Button>
@@ -202,6 +223,7 @@ export default function UserProfile() {
                     <X className="h-5 w-5" />
                     <span className="sr-only">Close</span>
                   </Button>
+                  
                 </div>
                 <div className="relative mb-4">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -293,7 +315,7 @@ export default function UserProfile() {
                       <div className="relative mb-4">
                         <Avatar className="h-24 w-24 border-2 border-honolulu-blue">
                           <AvatarImage src="/placeholder-user.jpg" alt="User" />
-                          <AvatarFallback className="bg-honolulu-blue text-white text-xl">JD</AvatarFallback>
+                          <AvatarFallback className="bg-honolulu-blue text-white text-xl">{initials}</AvatarFallback>
                         </Avatar>
                         <Button
                           variant="ghost"
@@ -340,6 +362,14 @@ export default function UserProfile() {
                           <Settings className="mr-2 h-5 w-5" />
                           Preferences
                         </Button>
+                        <Button
+                    variant="ghost"
+                    className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="mr-2 h-5 w-5" />
+                    Logout
+                  </Button>
                       </nav>
                     </div>
                   </CardContent>

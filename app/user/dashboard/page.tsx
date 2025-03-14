@@ -35,12 +35,15 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageTransition } from "@/components/ui/page-transition";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { useUser } from "@/hooks/useUser";
+import { getInitials } from "@/utils/utils";
 
 export default function UserDashboard() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-
+  const { user } = useUser();
+ 
   useEffect(() => {
     // Simulate loading data
     const timer = setTimeout(() => {
@@ -150,7 +153,7 @@ export default function UserDashboard() {
       </div>
     );
   }
-
+  const initials = getInitials(user.data.name)
   return (
     <PageTransition>
       <div className="flex min-h-screen flex-col">
@@ -215,7 +218,7 @@ export default function UserDashboard() {
                     <Avatar className="h-8 w-8 border border-non-photo-blue">
                       <AvatarImage src="/placeholder-user.jpg" alt="User" />
                       <AvatarFallback className="bg-honolulu-blue text-white">
-                        JD
+                     {initials}
                       </AvatarFallback>
                     </Avatar>
                     <span className="sr-only">Profile</span>
@@ -341,7 +344,7 @@ export default function UserDashboard() {
               className="mb-6"
             >
               <h1 className="text-2xl font-bold tracking-tight text-federal-blue">
-                Welcome back, John!
+                Welcome back, {user.data.name}!
               </h1>
               <p className="text-muted-foreground">
                 What would you like to eat today?

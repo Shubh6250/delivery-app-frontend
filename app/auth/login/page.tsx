@@ -16,6 +16,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { PageTransition } from "@/components/ui/page-transition"
+import { login } from "@/app/services/authServices"
+import { useUser } from "@/hooks/useUser"
+import apiClient from "@/app/services/apiClient"
+
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -26,38 +30,50 @@ export default function LoginPage() {
   const router = useRouter()
   const { toast } = useToast()
 
+  const { setUser } = useUser(); // Get setUser from useUser()
+
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Login successful",
-        description: `Logged in as ${userType}`,
-      })
-
-      // Redirect based on user type
-      switch (userType) {
-        case "user":
-          router.push("/user/dashboard")
-          break
-        case "restaurant":
-          router.push("/restaurant/dashboard")
-          break
-        case "delivery":
-          router.push("/delivery/dashboard")
-          break
-        case "admin":
-          router.push("/admin/dashboard")
-          break
-        default:
-          router.push("/user/dashboard")
+    e.preventDefault();
+    setIsLoading(true);
+  
+    const { status, data } = await login({ email, password });
+  
+    if (status === 200) {
+      // Store token in localStorage
+      localStorage.setItem("authToken", data.token);
+  
+      // Fetch user details after login
+      try {
+        const userResponse = await apiClient.get("/details", {
+          headers: { Authorization: `Bearer ${data.token}` },
+        });
+  
+        if (userResponse.status === 200) {
+          setUser(userResponse.data.data); // Update user context with fetched details
+          console.log(userResponse.data.data);
+          toast({
+            title: "Login successful",
+            description: `Welcome, ${userResponse.data.data.name}!`,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch user details", error);
       }
-
-      setIsLoading(false)
-    }, 1500)
-  }
+  
+      // Redirect based on user type (if user type is part of user details)
+      router.push("/user/dashboard");
+    } else {
+      toast({
+        title: "Login failed",
+        description: data.message || "Invalid credentials",
+        variant: "destructive",
+      });
+    }
+  
+    setIsLoading(false);
+  };
+  
+  
 
   return (
     <PageTransition>

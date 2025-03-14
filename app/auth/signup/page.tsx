@@ -16,6 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useToast } from "@/hooks/use-toast"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { PageTransition } from "@/components/ui/page-transition"
+import { signUp } from "@/app/services/authServices"
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -27,35 +28,51 @@ export default function SignupPage() {
   const router = useRouter()
   const { toast } = useToast()
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+// app/auth/signup/page.tsx (updated handleSignup function)
+const handleSignup = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      toast({
-        title: "Account created",
-        description: `Your ${userType} account has been created successfully`,
-      })
+  const { status, data } = await signUp({
+    name,
+    email,
+    password,
+    role: userType
+  });
 
-      // Redirect based on user type
-      switch (userType) {
-        case "user":
-          router.push("/user/dashboard")
-          break
-        case "restaurant":
-          router.push("/restaurant/dashboard")
-          break
-        case "delivery":
-          router.push("/delivery/dashboard")
-          break
-        default:
-          router.push("/user/dashboard")
-      }
+  if (status === 201) {
+    // Save token to localStorage (assuming API returns token)
+    localStorage.setItem('authToken', data.token);
+    
+    toast({
+      title: "Account created",
+      description: `Your ${userType} account has been created successfully`,
+    });
 
-      setIsLoading(false)
-    }, 1500)
+    // Redirect based on user type
+    switch (userType) {
+      case "user":
+        router.push("/user/dashboard");
+        break;
+      case "restaurant":
+        router.push("/restaurant/dashboard");
+        break;
+      case "delivery":
+        router.push("/delivery/dashboard");
+        break;
+      default:
+        router.push("/");
+    }
+  } else {
+    toast({
+      title: "Signup failed",
+      description: data.message || "Unable to create account",
+      variant: "destructive"
+    });
   }
+
+  setIsLoading(false);
+};
 
   return (
     <PageTransition>
