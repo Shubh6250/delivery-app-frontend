@@ -5,7 +5,7 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff, Utensils } from "lucide-react"
+import { Eye, EyeOff, Utensils, Upload } from "lucide-react"
 import { motion } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
@@ -24,55 +24,84 @@ export default function SignupPage() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [gstNumber, setGstNumber] = useState("")
+  const [aadharNumber, setAadharNumber] = useState("")
+  const [hotelRegNumber, setHotelRegNumber] = useState("")
+  const [panNumber, setPanNumber] = useState("")
+  const [aadharImage, setAadharImage] = useState<File | null>(null)
+  const [profileImage, setProfileImage] = useState<File | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
-// app/auth/signup/page.tsx (updated handleSignup function)
-const handleSignup = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setIsLoading(true);
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
 
-  const { status, data } = await signUp({
-    name,
-    email,
-    password,
-    role: userType
-  });
-
-  if (status === 201) {
-    // Save token to localStorage (assuming API returns token)
-    localStorage.setItem('authToken', data.token);
-    
-    toast({
-      title: "Account created",
-      description: `Your ${userType} account has been created successfully`,
-    });
-
-    // Redirect based on user type
-    switch (userType) {
-      case "user":
-        router.push("/user/dashboard");
-        break;
-      case "restaurant":
-        router.push("/restaurant/dashboard");
-        break;
-      case "delivery":
-        router.push("/delivery/dashboard");
-        break;
-      default:
-        router.push("/");
+    // Create a signup data object with conditional fields
+    const signupData: any = {
+      name,
+      email,
+      password,
+      role: userType,
     }
-  } else {
-    toast({
-      title: "Signup failed",
-      description: data.message || "Unable to create account",
-      variant: "destructive"
-    });
+
+    // Add role-specific fields
+    if (userType === "restaurant") {
+      signupData.gstNumber = gstNumber
+      signupData.aadharNumber = aadharNumber
+      signupData.hotelRegNumber = hotelRegNumber
+    } else if (userType === "delivery") {
+      signupData.aadharNumber = aadharNumber
+      signupData.panNumber = panNumber
+      // Note: File uploads would need to be handled differently, possibly with FormData
+      // This is a simplified version
+    }
+
+    const { status, data } = await signUp(signupData)
+
+    if (status === 201) {
+      // Save token to localStorage (assuming API returns token)
+      localStorage.setItem("authToken", data.token)
+
+      toast({
+        title: "Account created",
+        description: `Your ${userType} account has been created successfully`,
+      })
+
+      // Redirect based on user type
+      switch (userType) {
+        case "user":
+          router.push("/user/dashboard")
+          break
+        case "restaurant":
+          router.push("/restaurant/dashboard")
+          break
+        case "delivery":
+          router.push("/delivery/dashboard")
+          break
+        default:
+          router.push("/")
+      }
+    } else {
+      toast({
+        title: "Signup failed",
+        description: data.message || "Unable to create account",
+        variant: "destructive",
+      })
+    }
+
+    setIsLoading(false)
   }
 
-  setIsLoading(false);
-};
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    setFile: React.Dispatch<React.SetStateAction<File | null>>,
+  ) => {
+    if (e.target.files && e.target.files[0]) {
+      setFile(e.target.files[0])
+    }
+  }
 
   return (
     <PageTransition>
@@ -211,6 +240,141 @@ const handleSignup = async (e: React.FormEvent) => {
                     </div>
                   </RadioGroup>
                 </motion.div>
+
+                {userType === "restaurant" && (
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="space-y-4 pt-2 border-t border-non-photo-blue"
+                  >
+                    <div className="space-y-2">
+                      <Label htmlFor="gst-number" className="text-marian-blue">
+                        GST Number
+                      </Label>
+                      <Input
+                        id="gst-number"
+                        placeholder="22AAAAA0000A1Z5"
+                        required={userType === "restaurant"}
+                        value={gstNumber}
+                        onChange={(e) => setGstNumber(e.target.value)}
+                        className="border-non-photo-blue focus:border-honolulu-blue"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="aadhar-number" className="text-marian-blue">
+                        Aadhar Number
+                      </Label>
+                      <Input
+                        id="aadhar-number"
+                        placeholder="1234 5678 9012"
+                        required={userType === "restaurant"}
+                        value={aadharNumber}
+                        onChange={(e) => setAadharNumber(e.target.value)}
+                        className="border-non-photo-blue focus:border-honolulu-blue"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="hotel-reg-number" className="text-marian-blue">
+                        Hotel Registration Number
+                      </Label>
+                      <Input
+                        id="hotel-reg-number"
+                        placeholder="FSSAI123456789012"
+                        required={userType === "restaurant"}
+                        value={hotelRegNumber}
+                        onChange={(e) => setHotelRegNumber(e.target.value)}
+                        className="border-non-photo-blue focus:border-honolulu-blue"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {userType === "delivery" && (
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="space-y-4 pt-2 border-t border-non-photo-blue"
+                  >
+                    <div className="space-y-2">
+                      <Label htmlFor="aadhar-number" className="text-marian-blue">
+                        Aadhar Number
+                      </Label>
+                      <Input
+                        id="aadhar-number"
+                        placeholder="1234 5678 9012"
+                        required={userType === "delivery"}
+                        value={aadharNumber}
+                        onChange={(e) => setAadharNumber(e.target.value)}
+                        className="border-non-photo-blue focus:border-honolulu-blue"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pan-number" className="text-marian-blue">
+                        PAN Card Number
+                      </Label>
+                      <Input
+                        id="pan-number"
+                        placeholder="ABCDE1234F"
+                        required={userType === "delivery"}
+                        value={panNumber}
+                        onChange={(e) => setPanNumber(e.target.value)}
+                        className="border-non-photo-blue focus:border-honolulu-blue"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="aadhar-image" className="text-marian-blue">
+                        Upload Aadhar Card
+                      </Label>
+                      <div className="border-2 border-dashed border-non-photo-blue rounded-md p-4 hover:border-honolulu-blue transition-colors">
+                        <Input
+                          id="aadhar-image"
+                          type="file"
+                          accept="image/*"
+                          required={userType === "delivery"}
+                          onChange={(e) => handleFileChange(e, setAadharImage)}
+                          className="hidden"
+                        />
+                        <Label
+                          htmlFor="aadhar-image"
+                          className="flex flex-col items-center justify-center cursor-pointer"
+                        >
+                          <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {aadharImage ? aadharImage.name : "Click to upload Aadhar Card"}
+                          </span>
+                          <span className="text-xs text-muted-foreground mt-1">JPG, PNG or PDF up to 5MB</span>
+                        </Label>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="profile-image" className="text-marian-blue">
+                        Upload Profile Photo
+                      </Label>
+                      <div className="border-2 border-dashed border-non-photo-blue rounded-md p-4 hover:border-honolulu-blue transition-colors">
+                        <Input
+                          id="profile-image"
+                          type="file"
+                          accept="image/*"
+                          required={userType === "delivery"}
+                          onChange={(e) => handleFileChange(e, setProfileImage)}
+                          className="hidden"
+                        />
+                        <Label
+                          htmlFor="profile-image"
+                          className="flex flex-col items-center justify-center cursor-pointer"
+                        >
+                          <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                          <span className="text-sm font-medium text-muted-foreground">
+                            {profileImage ? profileImage.name : "Click to upload Profile Photo"}
+                          </span>
+                          <span className="text-xs text-muted-foreground mt-1">JPG or PNG up to 5MB</span>
+                        </Label>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </CardContent>
               <CardFooter className="flex flex-col">
                 <Button

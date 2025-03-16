@@ -153,7 +153,7 @@ export default function Home() {
                 <img
                   alt="Food Delivery"
                   className="aspect-video overflow-hidden rounded-xl object-cover object-center shadow-lg hover-scale"
-                  src="/placeholder.svg?height=550&width=750"
+                  src="https://res.cloudinary.com/dryp60cpr/image/upload/v1742146889/PizzaFood_ebod1g.jpg"
                 />
               </motion.div>
             </div>

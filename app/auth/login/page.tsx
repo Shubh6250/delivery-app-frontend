@@ -36,7 +36,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
   
-    const { status, data } = await login({ email, password });
+    const { status, data } = await login({ email, password,userType });
   
     if (status === 200) {
       // Store token in localStorage
