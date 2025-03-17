@@ -36,7 +36,8 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
   
-    const { status, data } = await login({ email, password,userType });
+    // Send request with updated `userType`
+    const { status, data } = await login({ email, password, userType });
   
     if (status === 200) {
       // Store token in localStorage
@@ -50,18 +51,25 @@ export default function LoginPage() {
   
         if (userResponse.status === 200) {
           setUser(userResponse.data.data); // Update user context with fetched details
-          console.log(userResponse.data.data);
+         
+  
           toast({
             title: "Login successful",
             description: `Welcome, ${userResponse.data.data.name}!`,
           });
+  
+          // Redirect based on userType
+          if (userResponse.data.data.role === "restaurant") {
+            router.push("/restaurant/dashboard");
+          } else if (userResponse.data.data.role === "delivery") {
+            router.push("/delivery/dashboard");
+          } else {
+            router.push("/user/dashboard");
+          }
         }
       } catch (error) {
         console.error("Failed to fetch user details", error);
       }
-  
-      // Redirect based on user type (if user type is part of user details)
-      router.push("/user/dashboard");
     } else {
       toast({
         title: "Login failed",
@@ -72,6 +80,7 @@ export default function LoginPage() {
   
     setIsLoading(false);
   };
+  
   
   
 

@@ -52,6 +52,8 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useUser } from "@/hooks/useUser"
+import { addMenuItem } from "@/app/services/restaurantService"
 
 export default function RestaurantMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -61,6 +63,7 @@ export default function RestaurantMenu() {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
   const router = useRouter()
   const { toast } = useToast()
+const {user}=useUser()
 
   // Form state for new/edit menu item
   const [itemName, setItemName] = useState("")
@@ -214,9 +217,29 @@ export default function RestaurantMenu() {
     return () => clearTimeout(timer)
   }, [])
 
-  const handleAddMenuItem = () => {
+  const handleAddMenuItem = async () => {
+    if (!user || user.data.role !== "restaurant") {
+      console.error("User is not a restaurant!");
+      toast({
+        title: "Error",
+        description: "You are not authorized to add menu items.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
+    if (!user.data.restaurantId) {
+      console.error("Restaurant ID missing in user data!");
+      toast({
+        title: "Error",
+        description: "Restaurant ID not found. Please contact support.",
+        variant: "destructive",
+      });
+      return;
+    }
+  
     const newItem: MenuItem = {
-      id: menuItems.length + 1,
+      id: menuItems.length + 1, // or generate a unique id
       name: itemName,
       description: itemDescription,
       price: Number.parseFloat(itemPrice),
@@ -225,18 +248,38 @@ export default function RestaurantMenu() {
       available: isAvailable,
       vegetarian: isVegetarian,
       popular: isPopular,
+    };
+  
+    try {
+      const { status, data } = await addMenuItem(user.data.restaurantId, newItem);
+  
+      if (status === 201) {
+        setMenuItems([...menuItems, newItem]);
+        resetForm();
+        setIsAddMenuItemOpen(false);
+        toast({
+          title: "Menu item added",
+          description: `${itemName} has been added to your menu`,
+        });
+      } else {
+        console.error("❌ Failed to add menu item:", data);
+        toast({
+          title: "Error",
+          description: data.message || "Failed to add menu item.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error adding menu item:", error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again later.",
+        variant: "destructive",
+      });
     }
-
-    setMenuItems([...menuItems, newItem])
-    resetForm()
-    setIsAddMenuItemOpen(false)
-
-    toast({
-      title: "Menu item added",
-      description: `${itemName} has been added to your menu`,
-    })
-  }
-
+  };
+  
+  
   const handleEditMenuItem = () => {
     if (!editingItem) return
 
